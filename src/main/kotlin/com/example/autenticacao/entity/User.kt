@@ -2,6 +2,7 @@ package com.example.autenticacao.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.util.*
 import javax.persistence.*
 
 @Entity
@@ -12,11 +13,14 @@ data class Client(
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_user")
         @JsonIgnore
-        val idUser: Long,
-        val name: String,
-        val email: String,
-        val cpf_cnpj: String,
-        val login: String,
+        val idUser: Long = 0L,
+        val name: String = "",
+        val email: String = "",
+        val cpf_cnpj: String = "",
+        val login: String = "",
         @JsonProperty("senha")
-        var password: String
+        var password: String = "",
+        @JsonIgnore
+        val uuid: UUID = UUID.randomUUID()
+
 )

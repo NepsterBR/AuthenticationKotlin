@@ -1,5 +1,7 @@
 package com.example.autenticacao.service
 
+import com.example.autenticacao.dto.request.UserRequest
+import com.example.autenticacao.dto.response.TokenResponse
 import com.example.autenticacao.entity.Client
 import com.example.autenticacao.repository.UserRepository
 import io.jsonwebtoken.Jwts
@@ -27,7 +29,7 @@ class UserService(
                     .toByteArray(StandardCharsets.UTF_8))
 
     fun creatUser(user: Client): String {
-        return if (userRepository.findByLogin(user.login)?.isPresent == true) {
+        return if (userRepository.findByLogin(user.login).isPresent) {
             "login já cadastrado no sistema"
         } else try {
             user.password = passwordEncoder.encode(user.password)
@@ -38,26 +40,34 @@ class UserService(
         }
     }
 
-    fun validateUser(user: Client): String {
-        val name: Optional<Client?>? = userRepository.findByLogin(user.login)
+    fun validateUser(user: UserRequest): TokenResponse {
+        val name: Optional<Client?> = userRepository.findByLogin(user.login)
         return try {
-            if (!passwordEncoder.matches(user.password, name!!.get().password)) {
-                "Usuário e/ou senha inválidos."
+            if (!passwordEncoder.matches(user.password, name.get().password)) {
+                throw RuntimeException("Usuário e/ou senha inválidos.")
             } else {
-                Jwts.builder()
-                        .setSubject(name.get().toString())
-                        .setIssuer("Let's Code Bank")
-                        .setIssuedAt(Date())
-                        .setExpiration(
-                                Date.from(
-                                        LocalDateTime.now().plusMinutes(15L)
-                                                .atZone(ZoneId.systemDefault())
-                                                .toInstant()))
-                        .signWith(SignatureAlgorithm.HS256, KEY)
-                        .compact()
+                val token = TokenResponse(
+                        token = Jwts.builder()
+                                .setSubject(name.get().uuid.toString())
+                                .setIssuer("Let's Code Bank")
+                                .setIssuedAt(Date())
+                                .setExpiration(
+                                        Date.from(
+                                                LocalDateTime.now().plusMinutes(15L)
+                                                        .atZone(ZoneId.systemDefault())
+                                                        .toInstant()))
+                                .signWith(SignatureAlgorithm.HS256, KEY)
+                                .compact(),
+                        expiresIn = Date.from(
+                                LocalDateTime.now().plusMinutes(15L)
+                                        .atZone(ZoneId.systemDefault())
+                                        .toInstant()).toInstant().epochSecond
+                )
+                return token
             }
         } catch (ex: Exception) {
-            "Não foi possivel validar o usuário."
+            throw RuntimeException("Não foi possivel validar o usuário.")
         }
     }
+
 }
