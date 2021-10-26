@@ -24,3 +24,17 @@ data class Client(
         val uuid: UUID = UUID.randomUUID()
 
 )
+
+@Entity
+@Table(name = "audit")
+data class Audit(
+
+        @Id
+        val id: UUID = UUID.randomUUID(),
+        val type: String = "",
+        val login: String = "",
+        @Column(name = "created_at")
+        val createdAt: Long = 0
+        )
+
+enum class RegisterType{ CADASTRO, AUTENTICACAO }

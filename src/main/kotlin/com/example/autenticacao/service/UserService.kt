@@ -2,11 +2,15 @@ package com.example.autenticacao.service
 
 import com.example.autenticacao.dto.request.UserRequest
 import com.example.autenticacao.dto.response.TokenResponse
+import com.example.autenticacao.entity.Audit
 import com.example.autenticacao.entity.Client
+import com.example.autenticacao.entity.RegisterType
+import com.example.autenticacao.repository.AuditRepository
 import com.example.autenticacao.repository.UserRepository
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
@@ -23,6 +27,9 @@ class UserService(
         val userRepository: UserRepository
 ) {
 
+    @Autowired
+    lateinit var auditService: AuditService
+
     //TODO colocar em variavel de ambiente
     private val KEY: SecretKey = Keys.hmacShaKeyFor(
             "7f-j&CKk=coNzZc0y7_4obMP?#TfcYq%fcD0mDpenW2nc!lfGoZ|d?f&RNbDHUX6"
@@ -34,6 +41,7 @@ class UserService(
         } else try {
             user.password = passwordEncoder.encode(user.password)
             userRepository.save(user)
+            auditService.convertAudit(user.login, RegisterType.CADASTRO)
             "Usuario criado com sucesso!"
         } catch (e: Exception) {
             "não foi possivel criar usuario"
@@ -63,6 +71,7 @@ class UserService(
                                         .atZone(ZoneId.systemDefault())
                                         .toInstant()).toInstant().epochSecond
                 )
+                auditService.convertAudit(user.login, RegisterType.AUTENTICACAO)
                 return token
             }
         } catch (ex: Exception) {
